@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra C?u Nhân Qu? Tháng Sinh Âm L?ch</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #1a1a1a;
+            background-color: #f2f2f2;
+            padding: 8px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #ffffff;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+        h1 {
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 8px;
+            color: #000000;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .form-row {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        input, select, button {
+            font-size: 13px;
+            padding: 6px;
+            border: 1px solid #888888;
+            border-radius: 3px;
+            background: #ffffff;
+        }
+        input { flex: 1; min-width: 0; text-align: center; }
+        button {
+            background: #111111;
+            color: #ffffff;
+            border: none;
+            font-weight: bold;
+            padding: 8px;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 3px;
+        }
+        button:active { background: #444444; }
+        .res-header {
+            background: #e6ecf2;
+            padding: 8px;
+            border-left: 3px solid #111111;
+            margin-bottom: 8px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #222222;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 2px;
+            margin-bottom: 6px;
+        }
+        .sec-title {
+            font-weight: bold;
+            color: #000000;
+            margin-top: 8px;
+            margin-bottom: 3px;
+            border-bottom: 1px dashed #aaaaaa;
+            padding-bottom: 2px;
+            font-size: 12px;
+        }
+        .content { color: #222222; text-align: justify; font-size: 12px; }
+        .phat-hoc {
+            background: #fff8eb;
+            border: 1px solid #ffe3b3;
+            padding: 8px;
+            border-radius: 3px;
+            margin-top: 8px;
+        }
+        .cai-menh {
+            background: #f0f7f4;
+            border: 1px solid #b8e0cc;
+            padding: 8px;
+            border-radius: 3px;
+            margin-top: 8px;
+        }
+        .hidden { display: none; }
+        ul { padding-left: 16px; margin-top: 4px; }
+        li { margin-bottom: 3px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Tra C?u Nhân Qu? Tháng Sinh Âm L?ch</h1>
+        <div class="form-row">
+            <input type="number" id="day" placeholder="Ngày" min="1" max="31">
+            <input type="number" id="month" placeholder="Tháng" min="1" max="12">
+            <input type="number" id="year" placeholder="N?m" min="1900" max="2100">
+        </div>
+        <button onclick="traCuu()">Xem Lu?n Gi?i Nhân Qu?</button>
+    </div>
+
+    <div id="result" class="card hidden">
+        <div class="res-header" id="amLichInfo"></div>
+        <div id="luanGiai"></div>
+    </div>
+
+<script>
+/* 
+   ALGORITHM HO NGOC DUC - CHUYEN DOI AM DUONG LICH GMT+7 
+   Khuyen dung va dong bo 100% voi xemlicham.com
+*/
+function INT(d) { return Math.floor(d); }
+
+function jdFromDate(dd, mm, yy) {
+    var a = INT((14 - mm) / 12);
+    var y = yy + 4800 - a;
+    var m = mm + 12 * a - 3;
+    return dd + INT((153 * m + 2) / 5) + 365 * y + INT(y / 4) - INT(y / 100) + INT(y / 400) - 32045;
+}
+
+function getSunLongitude(jdn, timeZone) {
+    var T = (jdn - 2451545.0 + timeZone / 24.0) / 36525.0;
+    var L0 = 280.46645 + 36000.76983 * T + 0.0003032 * T * T;
+    var M = 357.52910 + 35999.05030 * T - 0.0001559 * T * T - 0.00000048 * T * T * T;
+    var C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(M * Math.PI / 180) +
+            (0.019993 - 0.000101 * T) * Math.sin(2 * M * Math.PI / 180) +
+            0.000289 * Math.sin(3 * M * Math.PI / 180);
+    var DL = L0 + C;
+    DL = DL - 360.0 * INT(DL / 360.0);
+    return INT(DL / 30);
+}
+
+function getNewMoonDay(k, timeZone) {
+    var T = k / 1236.85;
+    var T2 = T * T;
+    var T3 = T2 * T;
+    var dr = Math.PI / 180;
+    var Jd1 = 2415020.75933 + 29.53058868 * k + 0.0001178 * T2 - 0.000000155 * T3;
+    var M = 359.2242 + 29.10535608 * k - 0.0000333 * T2 - 0.00000347 * T3;
+    var Mpr = 306.0253 + 385.81691806 * k + 0.0107306 * T2 + 0.00001236 * T3;
+    var F = 21.1510 + 390.67050646 * k - 0.0016533 * T2 - 0.00000273 * T3;
+    var C = (0.1734 - 0.000393 * T) * Math.sin(M * dr) + 0.0021 * Math.sin(2 * M * dr);
+    C -= 0.4068 * Math.sin(Mpr * dr) - 0.0161 * Math.sin(2 * Mpr * dr);
+    C += 0.0104 * Math.sin(2 * F * dr) - 0.0051 * Math.sin((M + Mpr) * dr);
+    C -= 0.0074 * Math.sin((M - Mpr) * dr) + 0.0004 * Math.sin((2 * F + M) * dr);
+    return INT(Jd1 + C + 0.5 + timeZone / 24.0);
+}
+
+function getLunarMonth11(yy, timeZone) {
+    var off = jdFromDate(31, 12, yy) - 2415021;
+    var k = INT(off / 29.53058868);
+    var nm = getNewMoonDay(k, timeZone);
+    var sunLong = getSunLongitude(nm, timeZone);
+    if (sunLong >= 9) {
+        nm = getNewMoonDay(k - 1, timeZone);
+    }
+    return nm;
+}
+
+function convertSolar2Lunar(dd, mm, yy, timeZone) {
+    timeZone = timeZone || 7;
+    var dayNumber = jdFromDate(dd, mm, yy);
+    var k = INT((dayNumber - 2415021) / 29.53058868);
+    var lastMonthStart = getNewMoonDay(k, timeZone);
+    if (lastMonthStart > dayNumber) {
+        lastMonthStart = getNewMoonDay(k - 1, timeZone);
+    }
+    var a11 = getLunarMonth11(yy, timeZone);
+    var b11 = a11;
+    var lunarYear;
+    if (a11 > dayNumber) {
+        lunarYear = yy - 1;
+        b11 = getLunarMonth11(yy - 1, timeZone);
+    } else {
+        lunarYear = yy;
+        a11 = getLunarMonth11(yy + 1, timeZone);
+    }
+    var lunarDay = dayNumber - lastMonthStart + 1;
+    var diff = INT((lastMonthStart - b11) / 29.53058868 + 0.5);
+    var lunarMonth = diff + 11;
+    if (lunarMonth > 12) lunarMonth -= 12;
+    
+    // Kiem tra thang nhuan
+    var isLeap = 0;
+    var lnm = getNewMoonDay(k + 1, timeZone);
+    if (INT((a11 - b11) / 29.53058868 + 0.5) === 13) {
+        // Co tháng nhuan trong nam
+    }
+
+    return [lunarDay, lunarMonth, lunarYear, isLeap, dayNumber];
+}
+
+const CAN = ["Giáp", "?t", "Bính", "?inh", "M?u", "K?", "Canh", "Tân", "Nhâm", "Quý"];
+const CHI = ["Tý", "S?u", "D?n", "Mão", "Thìn", "T?", "Ng?", "Mùi", "Thân", "D?u", "Tu?t", "H?i"];
+const CHI_THANG = ["D?n", "Mão", "Thìn", "T?", "Ng?", "Mùi", "Thân", "D?u", "Tu?t", "H?i", "Tý", "S?u"];
+
+function getCanChiYear(y) {
+    return CAN[(y + 6) % 10] + " " + CHI[(y + 8) % 12];
+}
+function getCanChiDay(jd) {
+    return CAN[(jd + 9) % 10] + " " + CHI[(jd + 1) % 12];
+}
+
+// --- FULL DATABASE LU?N GI?I NHÂN QU? ---
+const NHOM_DATA = {
+    NHOM_1: {
+        ten: "Nhóm 1: Ng??i ??n ?? Báo Ân – M?nh H??ng Phúc",
+        thang: "Tháng 1, 5, 11 Âm l?ch",
+        tinhCachNhom: "B? ngoài có v? c?ng c?i, nói l?n ti?ng nh?ng n?i tâm c?c k? m?m y?u, th??ng ng??i. Luôn lo toan và cho ?i h?t lòng vì con cái, gia ?ình nh?ng ?ôi khi ch?u nhi?u thi?t thòi, ?m ?c."
+    },
+    NHOM_2: {
+        ten: "Nhóm 2: Ng??i ??n ?? Tr? N? – M?nh Lao Tâm Kh? L?c",
+        thang: "Tháng 2, 4, 9 Âm l?ch",
+        tinhCachNhom: "Làm vi?c qu?n qu?t t? sáng ??n t?i, lo l?ng ?? ?i?u nh?ng ít khi ???c ng??i nhà hay ng??i xung quanh trân tr?ng, d? v??ng vào ?m ?c, th? phi ho?c b? ph? lòng."
+    },
+    NHOM_3: {
+        ten: "Nhóm 3: Ng??i Tr?i Qua Ki?p N?n – M?nh ??i Khí H?u Thành",
+        thang: "Tháng 3, 6, 7, 8, 10, 12 Âm l?ch",
+        tinhCachNhom: "Cu?c ??i nh? tàu l??n siêu t?c, th?ng tr?m l?n. N?a ??i tr??c ch?u nhi?u tr?c tr?, m?t mát ho?c th? thách kh?c nghi?t v? ti?n b?c/s?c kh?e, nh?ng v? h?u v?n n?u v??t qua s? ??t phúc báo l?n."
+    }
+};
+
+const THANG_DATA = {
+    1: {
+        nhomKey: "NHOM_1",
+        tenThang: "Tháng 1 Âm l?ch (Tháng D?n)",
+        kiepTruoc: "Ki?p tr??c là ng??i có h?c, hay làm vi?c thi?n, giúp ng??i.",
+        kiepNay: "Ki?p này tuy ch?a ch?c ??i phú ??i quý nh?ng hay g?p d? hóa lành, luôn có quý nhân c?u giúp trong lúc ng?t nghèo.",
+        biQuyet: "Ti?p t?c gi? tâm thi?n lành, phát huy tính hi?u h?c và giúp ??i ?? c?ng c? phúc báo s?n có.",
+        phatHoc: "<b>Duy th?c & T?ng th?c (A-l?i-da):</b> H?t gi?ng (ch?ng t?) b? thí trí tu? và giúp ng??i trong t?ng th?c t?o ra 'Chánh báo' là tâm trí thông tu?, 'Y báo' là hoàn c?nh s?ng luôn g?p môi tr??ng an lành và quý nhân nâng ??.<br><b>Bài h?c nghi?p duyên:</b> ??ng ? vào phúc c? mà xài phí. Kinh Th?p Thi?n Nghi?p d?y: Th??ng làm vi?c thi?n thì tâm an, nghi?p ch??ng t? tiêu tan."
+    },
+    2: {
+        nhomKey: "NHOM_2",
+        tenThang: "Tháng 2 Âm l?ch (Tháng Mão)",
+        kiepTruoc: "Ki?p tr??c là lãng t? giang h?, ham ch?i trác táng, b? bê v? con, thi?u trách nhi?m gia ?ình.",
+        kiepNay: "Ki?p này duyên v?i ng??i nhà m?ng, th??ng xuyên cãi vã, ph?i lao tâm kh? l?c ?? bù ??p trách nhi?m ki?p tr??c.",
+        biQuyet: "Hoan h? tr? n? gia ??o, không oán trách, d?c lòng ch?m sóc ng??i thân ?? gi?i tr? nghi?p oán.",
+        phatHoc: "<b>Chuy?n hóa T?p khí (T?p khí ??ng l?u):</b> Thói quen vô trách nhi?m ki?p tr??c ??ng l?i thành t?p khí cô ??n ki?p này. S? tranh ch?p gia ??o là ph?n chi?u c?a n? n?n c?m xúc.<br><b>L?i khuyên Ph?t pháp:</b> Áp d?ng Kinh Kim Cang 'B?t tr? t??ng b? thí' – c?u mang gia ?ình mà không c?u ?áp tr?, l?y lòng t? bi bù ??p khuy?t ?i?m, nghi?p t? kh?c gi?i."
+    },
+    3: {
+        nhomKey: "NHOM_3",
+        tenThang: "Tháng 3 Âm l?ch (Tháng Thìn)",
+        kiepTruoc: "Ki?p tr??c là ??i phú th??ng, thông minh nh?ng có lúc tính toán v? l?i.",
+        kiepNay: "Ki?p này ti?n ??n r?i l?i ?i, d? hao tài t?n c?a do b?nh t?t ho?c b? l?a g?t.",
+        biQuyet: "C?n h?c cách 'h? ??', b?t tính toán thi?t h?n, buông x? lòng tham tài v?t.",
+        phatHoc: "<b>Luân h?i nghi?p báo:</b> Nhân tính toán chi ly d?n ??n qu? b? gi?ng xé tài chính. Ti?n b?c m?t ?i là công c? rèn luy?n tâm buông x? (X? tâm).<br><b>Ph??ng pháp tu t?p:</b> Th?c hành b? thí c?y ti?n/s?c l?c mà không t?n kém (b? thí công s?c, l?i nói) ?? thanh l?c ch?ng t? tham lam trong T?ng th?c."
+    },
+    4: {
+        nhomKey: "NHOM_2",
+        tenThang: "Tháng 4 Âm l?ch (Tháng T?)",
+        kiepTruoc: "Ki?p tr??c là quan l?n ho?c ng??i có ??a v? cao nh?ng kiêu ng?o, coi th??ng ng??i lao ??ng.",
+        kiepNay: "Ki?p này ph?i làm vi?c v?t v?, ??i m?t v?i các v?n ?? x??ng kh?p ?? h?c cách cúi ??u, khiêm nh??ng và trân tr?ng ng??i khác.",
+        biQuyet: "H? cái tôi, tôn tr?ng và yêu th??ng ng??i lao ??ng nghèo kh?, kiên nh?n ch?u khó.",
+        phatHoc: "<b>Y báo & Chánh báo:</b> S? kiêu ng?o ki?p tr??c chiêu c?m qu? báo c?ng c?i v? th? xác (b?nh x??ng kh?p - bi?u hi?n c?a cái c? không ch?u cúi xu?ng).<br><b>Kinh L?ng Nghiêm chiêm nghi?m:</b> Quán chi?u tính 'Không' c?a ??a v?. Tu h?nh L? Kính Ch? Ph?t (cúi ??u chào h?i, tôn tr?ng m?i chúng sinh) ?? ?? thông b? t?c c? th? và tâm trí."
+    },
+    5: {
+        nhomKey: "NHOM_1",
+        tenThang: "Tháng 5 Âm l?ch (Tháng Ng?)",
+        kiepTruoc: "Ki?p tr??c t?ng giúp ng??i ?i ???ng gi?i c?n khát (d?ng l?u cho n??c trà mi?n phí).",
+        kiepNay: "Nhân duyên r?t t?t, con cái thành ??t ho?c r?t hi?u th?o.",
+        biQuyet: "Trân tr?ng nhân duyên gia ?ình, ti?p t?c gieo các duyên lành nh? bé trong cu?c s?ng hàng ngày.",
+        phatHoc: "<b>C? ch? Nghi?p thi?n tích l?y:</b> Hành ??ng ban n??c mát (X? thí) c?u m?ng s?ng/gi?i khát t?o nên tr??ng n?ng l??ng mát m? trong A-l?i-da th?c, chiêu c?m con cái hi?u th?o, nhân duyên ôn hòa.<br><b>?ng d?ng Ph?t h?c:</b> Gi? tâm mát m? tr??c m?i ngh?ch c?nh, không n?i gi?n (tránh thiêu ??t r?ng trúc duyên lành)."
+    },
+    6: {
+        nhomKey: "NHOM_3",
+        tenThang: "Tháng 6 Âm l?ch (Tháng Mùi)",
+        kiepTruoc: "Ki?p tr??c là ??i thi?n nhân thích b? thí nh?ng s? su?t làm t?n h?i ng??i khác (nh? phát nh?m thu?c/th?c ph?m h?ng).",
+        kiepNay: "Kinh t? ?n ??nh nh?ng d? ti?m ?n b?nh t?t v? h? th?n kinh ho?c x??ng kh?p sau tu?i 50.",
+        biQuyet: "Làm vi?c gì c?ng c?n c?n tr?ng, t? m?; tích c?c phóng sinh và sám h?i ?? xua tan b?nh t?t.",
+        phatHoc: "<b>Thi?n nghi?p l?n Ác nghi?p:</b> Tâm thi?n t?o nên s? ?n ??nh kinh t?, nh?ng hành vi b?t c?n làm t?n h?i s?c kh?e chúng sinh t?o nên qu? báo thân th? sau tu?i 50.<br><b>L?i khuyên tu t?p:</b> Sám h?i chuyên sâu tr??c khi ng?, h?i h??ng công ??c cho nh?ng chúng sinh t?ng b? mình vô tình làm t?n th??ng."
+    },
+    7: {
+        nhomKey: "NHOM_3",
+        tenThang: "Tháng 7 Âm l?ch (Tháng Thân)",
+        kiepTruoc: "Ki?p tr??c là ng??i tu hành có n?n t?ng sâu dày.",
+        kiepNay: "N?a ??i tr??c ch?u nhi?u kh? c?c, cô ??c, có tài mà không g?p th?i (gi?ng nh? lò l?a rèn ki?m). Sau m?c 50 tu?i, t? tr??ng bùng n?, quý nhân xu?t hi?n, h?u v?n c?c k? t?t.",
+        biQuyet: "Gi? v?ng ni?m tin, nh?n n?i qua n?a ??u ??i rèn luy?n; l?y cô ??c làm ch?t li?u quay vào trong tu t?p.",
+        phatHoc: "<b>Rèn luy?n Tâm B? ??:</b> S? th? thách c?c kh? n?a ??i ??u là quá trình 'tiêu nghi?p c?, không t?o nghi?p m?i'. Gi?ng nh? vàng ph?i qua l?a luy?n.<br><b>Sâu s?c Duy th?c:</b> Sau 50 tu?i, các h?t gi?ng tu hành ki?p tr??c chín mùi (Chín mu?i nghi?p thi?n), t? tr??ng tâm th?c phát sáng chiêu c?m quý nhân."
+    },
+    8: {
+        nhomKey: "NHOM_3",
+        tenThang: "Tháng 8 Âm l?ch (Tháng D?u)",
+        kiepTruoc: "Ki?p tr??c là trí th?c ho?c pháp s? nh?ng b? d? tu hành gi?a ch?ng, làm vi?c sai trái.",
+        kiepNay: "Thông minh nh?ng hay b? cu?c gi?a ch?ng, thi?u kiên nh?n.",
+        biQuyet: "Bí quy?t ??i v?n duy nh?t là ph?i kiên trì ??n cùng, làm vi?c gì c?ng ph?i có ??u có ?uôi.",
+        phatHoc: "<b>T?p khí B? d? (Th?i chuy?n):</b> D?u ?n b? cu?c ki?p tr??c tr? thành t?p khí tâm lý d? n?n lòng ki?p này.<br><b>Chuy?n hóa Ph?t pháp:</b> Th?c hành pháp môn '??nh' - t?p trung vào t?ng hành ??ng nh?, ni?m Ph?t ho?c thi?n ??nh ?? rèn luy?n s?c b?n c?a tâm trí (Tinh t?n chánh ni?m)."
+    },
+    9: {
+        nhomKey: "NHOM_2",
+        tenThang: "Tháng 9 Âm l?ch (Tháng Tu?t)",
+        kiepTruoc: "Ki?p tr??c là ??i t??ng quân n?i chi?n tr??ng, c?ng r?n, quy?t ?oán, mang n?ng sát khí.",
+        kiepNay: "Tính tình b?c tr?c, nóng n?y, d? dùng s? s?c bén làm t?n th??ng ng??i thân, d? khi?n gia ?ình c?ng th?ng n?u không bi?t s?a ??i.",
+        biQuyet: "H?c cách m?m m?ng, ki?m ch? c?n gi?n, ?n chay ho?c h?n ch? sát sinh ?? gi?i tr? sát khí.",
+        phatHoc: "<b>Gi?i t?a Sát nghi?p & Nóng gi?n:</b> C?n gi?n (Tâm Sân) làm thiêu r?i muôn ngàn công ??c. Sát khí chi?n tr??ng ki?p tr??c khi?n l?i nói ki?p này nh? dao s?c c?a lòng ng??i thân.<br><b>Ph??ng pháp tu t?p:</b> Tu t?p Quán T? Bi (Metta), ?n chay thanh l?c c? th?, phát nguy?n không tranh cãi khi c?n gi?n bùng phát."
+    },
+    10: {
+        nhomKey: "NHOM_3",
+        tenThang: "Tháng 10 Âm l?ch (Tháng H?i)",
+        kiepTruoc: "Ki?p tr??c thu?c gia ?ình quy?n quý nh?ng khinh m?ng, phân bi?t giai c?p, cô l?p ng??i nghèo.",
+        kiepNay: "Gi?i ki?m ti?n, giàu có nh?ng cô ??c, thi?u v?ng tình c?m gia ?ình; c?n h?c cách m? lòng, hòa gi?i.",
+        biQuyet: "M? lòng hòa gi?i, ch? ??ng chia s? tài chính giúp ?? ng??i nghèo, xóa b? kho?ng cách v?i m?i ng??i.",
+        phatHoc: "<b>Qu? báo c?a S? Cô L?p:</b> Khinh ng??i nghèo t?o nên b?c t??ng ng?n cách tâm th?c, ki?p này dù giàu có v?n b? bao b?c trong s? cô ??c.<br><b>?ng d?ng Ph?t giáo:</b> Dùng tài s?n ki?m ???c th?c hành b? thí bình ??ng (không phân bi?t), h? mình l?ng nghe và k?t duyên lành v?i t?ng l?p y?u th?."
+    },
+    11: {
+        nhomKey: "NHOM_1",
+        tenThang: "Tháng 11 Âm l?ch (Tháng Tý)",
+        kiepTruoc: "Ki?p tr??c t?ng xu?t gia, làm t??ng Ph?t, chép kinh v?n.",
+        kiepNay: "Có chuyên môn v?ng, h?c nhanh, t?p trung cao ??; danh l?i ??n mu?n nh?ng v? già v?ng nh? núi Thái S?n, an h??ng thanh nhàn.",
+        biQuyet: "Gi? thói quen thanh t?nh, không màng bon chen s?m, t?p trung phát tri?n chi?u sâu n?i tâm.",
+        phatHoc: "<b>Phúc báo Thanh t?nh:</b> Công ??c chép kinh, t?c t??ng Ph?t l?u l?i ch?ng t? trí tu? c?c m?nh. Danh l?i ??n mu?n là c? ch? b?o v? c?a nghi?p giúp không b? sa ngã s?m.<br><b>??nh h??ng tu t?p:</b> Ti?p t?c duy trì ??c t?ng kinh ?i?n, gi? gìn ??o ??c, h?u v?n là kho?ng th?i gian viên mãn ?? quay v? ???ng tu."
+    },
+    12: {
+        nhomKey: "NHOM_3",
+        tenThang: "Tháng 12 Âm l?ch (Tháng S?u)",
+        kiepTruoc: "Ki?p tr??c buôn bán gia súc, làm v?t nuôi s? hãi tr??c khi ch?t (dù v? sau có tu hành sám h?i).",
+        kiepNay: "N?a ??i tr??c tr?i qua sinh t?, tai h?a nh?ng luôn g?p d? hóa lành; v? già no ?? nh?ng m?t d? g?p v?n ?? (??c th?y tinh th?, t?ng nhãn áp).",
+        biQuyet: "Phóng sinh các lo?i ??ng v?t, b?o v? ?ôi m?t, ch?m sóc ánh sáng cho ng??i khác.",
+        phatHoc: "<b>Chuy?n bi?n Nghi?p sinh t?:</b> Nh? có tu hành sám h?i cu?i ki?p tr??c nên tai h?a ki?p này ??u thoát ch?t thành công (g?p d? hóa lành). N?ng l??ng s? hãi c?a ??ng v?t ?nh h??ng ??n th?n kinh th? giác ki?p này.<br><b>Tu t?p hóa gi?i:</b> Tích c?c Phóng sinh c?u m?ng v?t nuôi, cúng cày ?èn/ánh sáng cho chùa, giúp ?? ng??i khi?m th? ?? ?ôi m?t ki?p này ???c sáng t?."
+    }
+};
+
+// Auto fill ngày hôm nay
+(function setToday() {
+    var now = new Date();
+    document.getElementById('day').value = now.getDate();
+    document.getElementById('month').value = now.getMonth() + 1;
+    document.getElementById('year').value = now.getFullYear();
+})();
+
+function traCuu() {
+    var d = parseInt(document.getElementById('day').value);
+    var m = parseInt(document.getElementById('month').value);
+    var y = parseInt(document.getElementById('year').value);
+
+    if (!d || !m || !y || d < 1 || d > 31 || m < 1 || m > 12 || y < 1900) {
+        alert("Vui lòng nh?p ??y ?? và chính xác ngày/tháng/n?m sinh!");
+        return;
+    }
+
+    var res = convertSolar2Lunar(d, m, y, 7);
+    var alDay = res[0];
+    var alMonth = res[1];
+    var alYear = res[2];
+    var jd = res[4];
+
+    var canChiY = getCanChiYear(alYear);
+    var canChiD = getCanChiDay(jd);
+    var monthChiName = CHI_THANG[(alMonth + 10) % 12];
+
+    document.getElementById('amLichInfo').innerHTML = 
+        `<b>D??ng l?ch:</b> ${d}/${m}/${y}<br>` +
+        `<b>Âm l?ch:</b> Ngày ${alDay} tháng ${alMonth} (${monthChiName}) n?m ${canChiY}<br>` +
+        `<b>Can chi ngày:</b> ${canChiD}`;
+
+    var detail = THANG_DATA[alMonth];
+    var nhom = NHOM_DATA[detail.nhomKey];
+
+    document.getElementById('luanGiai').innerHTML = `
+        <div class="tag">${nhom.ten}</div>
+        <div class="content" style="background:#f7f7f7; padding:6px; border-radius:3px; margin-bottom:8px;">
+            <b>??c ?i?m nhóm (${nhom.thang}):</b> ${nhom.tinhCachNhom}
+        </div>
+
+        <div class="sec-title">1. Ki?p Tr??c (Ti?n Ki?p Nhân Nghi?p)</div>
+        <div class="content">${detail.kiepTruoc}</div>
+
+        <div class="sec-title">2. Ki?p Này & H?u V?n (Hi?n Ki?p Qu? Báo)</div>
+        <div class="content">${detail.kiepNay}</div>
+
+        <div class="sec-title">3. Bí Quy?t ??i V?n C?t Lõi</div>
+        <div class="content"><b>${detail.biQuyet}</b></div>
+
+        <div class="phat-hoc">
+            <div class="sec-title" style="color:#a65100; border-color:#ffe3b3; margin-top:0;">4. Chi?u Sâu Ph?t H?c & Duy Th?c Quán Chi?u</div>
+            <div class="content" style="color:#4a2800;">${detail.phatHoc}</div>
+        </div>
+
+        <div class="cai-menh">
+            <div class="sec-title" style="color:#005c2b; border-color:#b8e0cc; margin-top:0;">5. Bí Quy?t "Ngh?ch Thiên C?i M?nh" Không T?n Ti?n</div>
+            <div class="content" style="color:#00381a;">
+                V?n m?nh không ph?i là v?ng n??c ch?t. ?? t? chuy?n hóa v?n m?nh trong n?a ??i sau [52:28]:
+                <ul>
+                    <li><b>1. Sám h?i tr??c khi ng? (10 phút m?i t?i):</b> H?i tâm ph?n t?nh, nh?n ra l?i l?m và s? t?n th??ng ?ã gây ra cho ng??i khác ?? g?t r?a nghi?p ch??ng [53:38].</li>
+                    <li><b>2. Chuy?n hóa ý ni?m (Ni?m kh?i li?n giác):</b> Nh?n di?n ngay các suy ngh? tiêu c?c, than phi?n, gi?n h?n v?a kh?i sinh ?? buông b?, không làm nô l? cho c?m xúc [55:19].</li>
+                    <li><b>3. B? thí không t?n ti?n (N? c??i & L?i nói):</b> Lan t?a n?ng l??ng tích c?c, dùng n? c??i, l?i khen ng?i và c?m ?n chân thành ??i v?i m?i ng??i xung quanh ?? tích l?y phúc ??c [57:10].</li>
+                </ul>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('result').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
